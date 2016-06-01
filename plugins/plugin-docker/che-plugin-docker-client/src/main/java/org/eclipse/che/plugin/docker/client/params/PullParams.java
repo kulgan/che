@@ -11,6 +11,7 @@
 package org.eclipse.che.plugin.docker.client.params;
 
 import org.eclipse.che.plugin.docker.client.ProgressMonitor;
+import org.eclipse.che.plugin.docker.client.dto.AuthConfigs;
 
 import javax.validation.constraints.NotNull;
 
@@ -25,9 +26,10 @@ import static java.util.Objects.requireNonNull;
  */
 public class PullParams {
 
-    private String image;
-    private String tag;
-    private String registry;
+    private String      image;
+    private String      tag;
+    private String      registry;
+    private AuthConfigs authConfigs;
 
     /**
      * Creates arguments holder with required parameters.
@@ -84,6 +86,18 @@ public class PullParams {
         return this;
     }
 
+    /**
+     * Adds auth configuration to this parameters.
+     *
+     * @param authConfigs
+     *         authentication configuration for registries
+     * @return this params instance
+     */
+    public PullParams withAuthConfigs(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
+        return this;
+    }
+
     public String getImage() {
         return image;
     }
@@ -96,6 +110,10 @@ public class PullParams {
         return registry;
     }
 
+    public AuthConfigs getAuthConfigs() {
+        return authConfigs;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -103,12 +121,13 @@ public class PullParams {
         PullParams that = (PullParams)o;
         return Objects.equals(image, that.image) &&
                Objects.equals(tag, that.tag) &&
-               Objects.equals(registry, that.registry);
+               Objects.equals(registry, that.registry) &&
+               Objects.equals(authConfigs, that.authConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(image, tag, registry);
+        return Objects.hash(image, tag, registry, authConfigs);
     }
 
 }

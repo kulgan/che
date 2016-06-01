@@ -148,6 +148,8 @@ public class DockerConnectorTest {
     @Mock
     private InitialAuthConfig            initialAuthConfig;
     @Mock
+    private AuthConfigs                  authConfigs;
+    @Mock
     private InputStream                  inputStream;
     @Mock
     private MessageProcessor<LogMessage> logMessageProcessor;
@@ -167,6 +169,8 @@ public class DockerConnectorTest {
         when(dockerConnectorConfiguration.getAuthConfigs()).thenReturn(initialAuthConfig);
         when(dockerResponse.getStatus()).thenReturn(RESPONSE_SUCCESS_CODE);
         when(dockerResponse.getInputStream()).thenReturn(inputStream);
+        when(initialAuthConfig.getAuthConfigs()).thenReturn(authConfigs);
+        when(authConfigs.getConfigs()).thenReturn(new HashMap<>());
 
         dockerConnector = spy(new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory));
 
@@ -1134,7 +1138,7 @@ public class DockerConnectorTest {
     }
 
     @Test
-    public void shouldBeAbleToPullImagecreateRegistryRepository() throws IOException, InterruptedException {
+    public void shouldBeAbleToPullImageCreateRegistryRepository() throws IOException, InterruptedException {
         PullParams pullParams = PullParams.create(IMAGE)
                                           .withRegistry(REGISTRY);
 

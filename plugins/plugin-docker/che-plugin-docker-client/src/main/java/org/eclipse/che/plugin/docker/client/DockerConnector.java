@@ -29,6 +29,7 @@ import org.eclipse.che.plugin.docker.client.connection.CloseConnectionInputStrea
 import org.eclipse.che.plugin.docker.client.connection.DockerConnection;
 import org.eclipse.che.plugin.docker.client.connection.DockerConnectionFactory;
 import org.eclipse.che.plugin.docker.client.connection.DockerResponse;
+import org.eclipse.che.plugin.docker.client.dto.AuthConfig;
 import org.eclipse.che.plugin.docker.client.dto.AuthConfigs;
 import org.eclipse.che.plugin.docker.client.json.ContainerCommitted;
 import org.eclipse.che.plugin.docker.client.json.ContainerConfig;
@@ -90,7 +91,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -114,6 +117,7 @@ import static javax.ws.rs.core.Response.Status.OK;
 @Singleton
 public class DockerConnector {
     private static final Logger LOG = LoggerFactory.getLogger(DockerConnector.class);
+    private static final String DEFAULT_REGISTRY = "";
 
     private final URI                     dockerDaemonUri;
     private final InitialAuthConfig       initialAuthConfig;
@@ -1123,7 +1127,8 @@ public class DockerConnector {
                               final ProgressMonitor progressMonitor,
                               File tar, // tar from params.files() (uses temporary until delete deprecated methods)
                               URI dockerDaemonUri) throws IOException, InterruptedException {
-        AuthConfigs authConfigs = firstNonNull(params.getAuthConfigs(), initialAuthConfig.getAuthConfigs());
+        final AuthConfigs authConfigs = params.getAuthConfigs();
+
         try (InputStream tarInput = new FileInputStream(tar);
              DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
@@ -1133,8 +1138,8 @@ public class DockerConnector {
                                                             .header("Content-Type", "application/x-compressed-tar")
                                                             .header("Content-Length", tar.length())
                                                             .header("X-Registry-Config",
-                                                                    Base64.encodeBase64String(JsonHelper.toJson(authConfigs)
-                                                                                                        .getBytes()))
+                                                                    getXRegistryConfigHeaderValue(
+                                                                            authConfigs != null ? authConfigs.getConfigs() : null))
                                                             .entity(tarInput)) {
             addQueryParamIfNotNull(connection, "t", params.getRepository());
             addQueryParamIfNotNull(connection, "memory", params.getMemoryLimit());
@@ -1297,14 +1302,19 @@ public class DockerConnector {
 
     private String push(final PushParams params, final ProgressMonitor progressMonitor, URI dockerDaemonUri)
             throws IOException, InterruptedException {
-        final String fullRepo = (params.getRegistry() != null) ?
-                                params.getRegistry() + '/' + params.getRepository() : params.getRepository();
+        final String registry = params.getRegistry();
+        final String fullRepo = (registry != null) ?
+                                registry + '/' + params.getRepository() : params.getRepository();
+        final AuthConfigs authConfigs = params.getAuthConfigs();
         final ValueHolder<String> digestHolder = new ValueHolder<>();
 
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
                                                             .path("/images/" + fullRepo + "/push")
-                                                            .header("X-Registry-Auth", initialAuthConfig.getAuthConfigHeader())) {
+                                                            .header("X-Registry-Auth",
+                                                                    getXRegistryAuthHeaderValue(
+                                                                            registry != null ? registry : DEFAULT_REGISTRY,
+                                                                            authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
             if (OK.getStatusCode() != response.getStatus()) {
@@ -1479,12 +1489,16 @@ public class DockerConnector {
                       final URI dockerDaemonUri) throws IOException, InterruptedException {
         final String image = params.getImage();
         final String registry = params.getRegistry();
+        final AuthConfigs authConfigs = params.getAuthConfigs();
 
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
                                                             .path("/images/create")
                                                             .query("fromImage", registry != null ? registry + '/' + image : image)
-                                                            .header("X-Registry-Auth", initialAuthConfig.getAuthConfigHeader())) {
+                                                            .header("X-Registry-Auth",
+                                                                    getXRegistryAuthHeaderValue(
+                                                                            registry != null ? registry : DEFAULT_REGISTRY,
+                                                                            authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
             if (OK.getStatusCode() != response.getStatus()) {
@@ -1717,6 +1731,86 @@ public class DockerConnector {
     private void addQueryParamIfNotNull(DockerConnection connection, String queryParamName, Boolean paramValue) {
         if (paramValue != null) {
             connection.query(queryParamName, paramValue ? 1 : 0);
+        }
+    }
+
+    /**
+     * Looks for auth header for specified registry.
+     * First searches in the params and then in the initial auth config.
+     * If nothing found empty json will be returned.
+     *
+     * @param registry
+     *         registry to which API call will be applied
+     * @param paramsAuthConfig
+     *         auth data for current API call
+     * @return base64 encoded X-Registry-Auth header value
+     */
+    private String getXRegistryAuthHeaderValue(String registry, @Nullable Map<String,AuthConfig> paramsAuthConfig) {
+        AuthConfig authConfig;
+
+        // try to find corresponding auth config in the params
+        if (paramsAuthConfig != null) {
+            authConfig = paramsAuthConfig.get(registry);
+            if (authConfig != null) {
+                return Base64.encodeBase64String(JsonHelper.toJson(authConfig).getBytes());
+            }
+        }
+
+        // try to find corresponding auth config in the initial auth config
+        authConfig = initialAuthConfig.getAuthConfigs().getConfigs().get(registry);
+        if (authConfig != null) {
+            return Base64.encodeBase64String(JsonHelper.toJson(authConfig).getBytes());
+        }
+
+        // nothing found, return empty auth
+        return "{}";
+    }
+
+    /**
+     * Builds list of auth configs.
+     * Adds auth configs from current API call and from initial auth config.
+     *
+     * @param paramsAuthConfig
+     *         auth config for current API call
+     * @return base64 encoded X-Registry-Config header value
+     */
+    private String getXRegistryConfigHeaderValue(@Nullable Map<String,AuthConfig> paramsAuthConfig) {
+        Map<String, XRegistryConfigUnit> authConfigs = new HashMap<>();
+
+        for(Map.Entry<String, AuthConfig> entry : initialAuthConfig.getAuthConfigs().getConfigs().entrySet()) {
+            AuthConfig value = entry.getValue();
+            authConfigs.put(value.getServeraddress(),
+                            new XRegistryConfigUnit(value.getUsername(), value.getPassword()));
+        }
+
+        if (paramsAuthConfig != null) {
+            for(Map.Entry<String, AuthConfig> entry : paramsAuthConfig.entrySet()) {
+                AuthConfig value = entry.getValue();
+                authConfigs.put(entry.getKey(),
+                                new XRegistryConfigUnit(value.getUsername(), value.getPassword()));
+            }
+        }
+
+        return Base64.encodeBase64String(JsonHelper.toJson(authConfigs).getBytes());
+    }
+
+    /** This class is used for generate X-Registry-Config list */
+    // protected is needed for JsonHelper
+    protected static class XRegistryConfigUnit {
+        private String username;
+        private String password;
+
+        public XRegistryConfigUnit(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public String getPassword() {
+            return password;
         }
     }
 
