@@ -10,36 +10,7 @@
  */
 'use strict';
 
-import {ListWorkspacesCtrl} from './list-workspaces/list-workspaces.controller';
-import {CheWorkspaceItem} from './list-workspaces/workspace-item/workspace-item.directive';
-import {CreateWorkspaceCtrl} from './create-workspace/create-workspace.controller';
-import {CreateWorkspaceAddMemberCtrl} from './create-workspace/create-workspace-add-member.controller';
-import {UsageChart} from './list-workspaces/workspace-item/usage-chart.directive';
-import {WorkspaceItemCtrl} from './list-workspaces/workspace-item/workspace-item.controller';
-import {WorkspaceDetailsCtrl} from './workspace-details/workspace-details.controller';
-import {WorkspaceDetailsProjectsCtrl} from './workspace-details/workspace-projects/workspace-details-projects.controller';
-import {WorkspaceDetailsService} from './workspace-details/workspace-details.service.js';
-import {ExportWorkspaceController} from './workspace-details/export-workspace/export-workspace.controller';
-import {ExportWorkspace} from './workspace-details/export-workspace/export-workspace.directive';
-import {ExportWorkspaceDialogController} from  './workspace-details/export-workspace/dialog/export-workspace-dialog.controller';
-import {WorkspaceDetailsProjects} from './workspace-details/workspace-projects/workspace-details-projects.directive';
-import {ReadyToGoStacksCtrl} from './create-workspace/select-stack/ready-to-go-stacks/ready-to-go-stacks.controller';
-import {ReadyToGoStacks} from './create-workspace/select-stack/ready-to-go-stacks/ready-to-go-stacks.directive';
-import {WorkspaceRecipeCtrl} from './create-workspace/select-stack/recipe/workspace-recipe.controller';
-import {WorkspaceRecipe} from './create-workspace/select-stack/recipe/workspace-recipe.directive';
-import {CheStackLibrarySelecter} from './create-workspace/select-stack/stack-library/stack-library-selecter/che-stack-library-selecter.directive';
-import {CreateProjectStackLibraryCtrl} from './create-workspace/select-stack/stack-library/create-project-stack-library.controller';
-import {CreateProjectStackLibrary} from './create-workspace/select-stack/stack-library/create-project-stack-library.directive';
-import {WorkspaceSelectStackCtrl} from './create-workspace/select-stack/workspace-select-stack.controller';
-import {WorkspaceSelectStack} from './create-workspace/select-stack/workspace-select-stack.directive';
 
-import {CheWorkspaceRamAllocationSliderCtrl} from './workspace-ram-slider/che-workspace-ram-allocation-slider.controller';
-import {CheWorkspaceRamAllocationSlider} from './workspace-ram-slider/che-workspace-ram-allocation-slider.directive';
-import {WorkspaceStatusIndicator} from './workspace-status-indicator/workspace-status-indicator.directive';
-
-import {CheStackLibraryFilterCtrl} from './create-workspace/select-stack/stack-library/stack-library-filter/che-stack-library-filter.controller';
-import {CheStackLibraryFilter}     from './create-workspace/select-stack/stack-library/stack-library-filter/che-stack-library-filter.directive';
-import {CreateProjectStackLibrarySelectedStackFilter} from './create-workspace/select-stack/stack-library/create-project-stack-library-selected-stack.filter.js';
 
 /**
  * @ngdoc controller
@@ -47,7 +18,7 @@ import {CreateProjectStackLibrarySelectedStackFilter} from './create-workspace/s
  * @description This class is used for configuring all workspaces stuff.
  * @author Ann Shumilova
  */
-export class WorkspacesConfig {
+export class WorkspacesProjectsConfig {
 
   constructor(register) {
 
