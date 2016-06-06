@@ -34,6 +34,7 @@ import org.everrest.core.tools.ResourceLauncher;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
@@ -249,6 +250,20 @@ public class UserServiceTest {
         assertEquals(user.getName(), newUser.getName());
         assertEquals(user.getPassword(), "<none>");
         verify(userManager).create(any(User.class), eq(false));
+    }
+
+    @Test
+    public void shouldThrowBadRequestExceptionWhenCreatingUserWithInvalidUsername() throws Exception {
+        final UserDescriptor newUser = DtoFactory.getInstance()
+                                                 .createDto(UserDescriptor.class)
+                                                 .withName("test-123@gmail.com")
+                                                 .withPassword("password");
+        when(securityContext.isUserInRole("system/admin")).thenReturn(true);
+
+        final ContainerResponse response = makeRequest(HttpMethod.POST, SERVICE_PATH + "/create", newUser);
+
+        assertEquals(response.getStatus(), BAD_REQUEST.getStatusCode());
+        verify(userManager, never()).create(any(User.class), anyBoolean());
     }
 
     @Test
