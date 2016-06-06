@@ -1313,7 +1313,7 @@ public class DockerConnector {
                                                             .path("/images/" + fullRepo + "/push")
                                                             .header("X-Registry-Auth",
                                                                     getXRegistryAuthHeaderValue(
-                                                                            registry != null ? registry : DEFAULT_REGISTRY,
+                                                                            registry,
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
@@ -1497,7 +1497,7 @@ public class DockerConnector {
                                                             .query("fromImage", registry != null ? registry + '/' + image : image)
                                                             .header("X-Registry-Auth",
                                                                     getXRegistryAuthHeaderValue(
-                                                                            registry != null ? registry : DEFAULT_REGISTRY,
+                                                                            registry,
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
@@ -1746,24 +1746,20 @@ public class DockerConnector {
      * @return base64 encoded X-Registry-Auth header value
      */
     private String getXRegistryAuthHeaderValue(String registry, @Nullable Map<String,AuthConfig> paramsAuthConfig) {
-        AuthConfig authConfig;
-
-        // try to find corresponding auth config in the params
+        AuthConfig authConfig = null;
         if (paramsAuthConfig != null) {
             authConfig = paramsAuthConfig.get(registry);
-            if (authConfig != null) {
-                return Base64.encodeBase64String(JsonHelper.toJson(authConfig).getBytes());
-            }
+        }
+        if (authConfig == null) {
+            authConfig = initialAuthConfig.getAuthConfigs().getConfigs().get(registry);
         }
 
-        // try to find corresponding auth config in the initial auth config
-        authConfig = initialAuthConfig.getAuthConfigs().getConfigs().get(registry);
         if (authConfig != null) {
-            return Base64.encodeBase64String(JsonHelper.toJson(authConfig).getBytes());
+            XRegistryAuthUnit auth = new XRegistryAuthUnit(authConfig.getUsername(), authConfig.getPassword());
+            return Base64.encodeBase64String(JsonHelper.toJson(auth).getBytes());
         }
 
-        // nothing found, return empty auth
-        return "{}";
+        return Base64.encodeBase64String("{}".getBytes());
     }
 
     /**
@@ -1775,19 +1771,19 @@ public class DockerConnector {
      * @return base64 encoded X-Registry-Config header value
      */
     private String getXRegistryConfigHeaderValue(@Nullable Map<String,AuthConfig> paramsAuthConfig) {
-        Map<String, XRegistryConfigUnit> authConfigs = new HashMap<>();
+        Map<String, XRegistryAuthUnit> authConfigs = new HashMap<>();
 
         for(Map.Entry<String, AuthConfig> entry : initialAuthConfig.getAuthConfigs().getConfigs().entrySet()) {
             AuthConfig value = entry.getValue();
             authConfigs.put(value.getServeraddress(),
-                            new XRegistryConfigUnit(value.getUsername(), value.getPassword()));
+                            new XRegistryAuthUnit(value.getUsername(), value.getPassword()));
         }
 
         if (paramsAuthConfig != null) {
             for(Map.Entry<String, AuthConfig> entry : paramsAuthConfig.entrySet()) {
                 AuthConfig value = entry.getValue();
                 authConfigs.put(entry.getKey(),
-                                new XRegistryConfigUnit(value.getUsername(), value.getPassword()));
+                                new XRegistryAuthUnit(value.getUsername(), value.getPassword()));
             }
         }
 
@@ -1796,11 +1792,11 @@ public class DockerConnector {
 
     /** This class is used for generate X-Registry-Config list */
     // protected is needed for JsonHelper
-    protected static class XRegistryConfigUnit {
+    protected static class XRegistryAuthUnit {
         private String username;
         private String password;
 
-        public XRegistryConfigUnit(String username, String password) {
+        public XRegistryAuthUnit(String username, String password) {
             this.username = username;
             this.password = password;
         }
