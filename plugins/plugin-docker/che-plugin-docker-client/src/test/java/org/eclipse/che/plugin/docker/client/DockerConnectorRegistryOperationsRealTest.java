@@ -40,12 +40,15 @@ public class DockerConnectorRegistryOperationsRealTest {
     private static final String DOCKER_REGISTRY_AUTH_USERNAME_KEY = "username";
     private static final String DOCKER_REGISTRY_AUTH_PASSWORD_KEY = "password";
 
+    private static final String DOCKER_REGISTRY_URL_VALUE           = "https://index.docker.io/v1/";
     private static final String DOCKER_REGISTRY_AUTH_URL_VALUE      = "index.docker.io";
     private static final String DOCKER_REGISTRY_AUTH_EMAIL_VALUE    = "mmorhun@codenvy.com";
     private static final String DOCKER_REGISTRY_AUTH_USERNAME_VALUE = "mm4eche";
     private static final String DOCKER_REGISTRY_AUTH_PASSWORD_VALUE = "4dtests";
 
     private static final String REPOSITORY_NAME = "testprivate";
+    private static final String TAG_NAME = "mtag";
+    private static final String ADDITIONAL_TAG_NAME = "newtest";
 
     @Mock
     private ConfigurationProperties configurationProperties;
@@ -61,7 +64,7 @@ public class DockerConnectorRegistryOperationsRealTest {
     @BeforeMethod
     public void setup() {
         configurationPropertiesMap = new HashMap<>();
-        configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_URL_KEY, DOCKER_REGISTRY_AUTH_URL_VALUE);
+        configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_URL_KEY, DOCKER_REGISTRY_URL_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_EMAIL_KEY, DOCKER_REGISTRY_AUTH_EMAIL_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_USERNAME_KEY, DOCKER_REGISTRY_AUTH_USERNAME_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_PASSWORD_KEY, DOCKER_REGISTRY_AUTH_PASSWORD_VALUE);
@@ -93,7 +96,7 @@ public class DockerConnectorRegistryOperationsRealTest {
 
         dockerConnector.push(PushParams.create(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
                                        .withRegistry(DOCKER_REGISTRY_AUTH_URL_VALUE)
-                                       .withTag("newtest"),
+                                       .withTag(ADDITIONAL_TAG_NAME),
                              currentProgressStatus -> {
                                  System.out.println(progressLineFormatter.format(currentProgressStatus));
                              });
@@ -104,7 +107,9 @@ public class DockerConnectorRegistryOperationsRealTest {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
         final ClassLoader classLoader = getClass().getClassLoader();
 
-        dockerConnector.buildImage(BuildImageParams.create(new File(classLoader.getResource("Dockerfile").getFile())),
+        dockerConnector.buildImage(BuildImageParams.create(new File(classLoader.getResource("Dockerfile").getFile()))
+                                                   .withRepository(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
+                                                   .withTag(TAG_NAME),
                                    currentProgressStatus -> {
                                        System.out.println(progressLineFormatter.format(currentProgressStatus));
                                    });

@@ -1128,6 +1128,8 @@ public class DockerConnector {
                               File tar, // tar from params.files() (uses temporary until delete deprecated methods)
                               URI dockerDaemonUri) throws IOException, InterruptedException {
         final AuthConfigs authConfigs = params.getAuthConfigs();
+        final String repository = params.getRepository();
+        final String tag = params.getTag();
 
         try (InputStream tarInput = new FileInputStream(tar);
              DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
@@ -1137,11 +1139,21 @@ public class DockerConnector {
                                                             .query("forcerm", 1)
                                                             .header("Content-Type", "application/x-compressed-tar")
                                                             .header("Content-Length", tar.length())
+                                                            /*.header("X-Registry-Config",  Base64.encodeBase64String((" {\n" +
+                                                                                                                    "        \"https://index.docker.io/v1/\": {\n" +
+                                                                                                                    "            \"username\": \"mm4eche\",\n" +
+                                                                                                                    "            \"password\": \"4dtests\"\n" +
+                                                                                                                    "        }\n" +
+                                                                                                                    "    }").getBytes()))*/
                                                             .header("X-Registry-Config",
                                                                     getXRegistryConfigHeaderValue(
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))
                                                             .entity(tarInput)) {
-            addQueryParamIfNotNull(connection, "t", params.getRepository());
+            if (tag == null) {
+                addQueryParamIfNotNull(connection, "t", repository);
+            } else {
+                addQueryParamIfNotNull(connection, "t", repository == null ? null : repository + ':' + tag);
+            }
             addQueryParamIfNotNull(connection, "memory", params.getMemoryLimit());
             addQueryParamIfNotNull(connection, "memswap", params.getMemorySwapLimit());
             addQueryParamIfNotNull(connection, "pull", params.isDoForcePull());
