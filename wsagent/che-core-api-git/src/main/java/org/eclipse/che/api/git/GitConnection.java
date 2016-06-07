@@ -54,6 +54,7 @@ import org.eclipse.che.api.git.shared.TagCreateRequest;
 import org.eclipse.che.api.git.shared.TagDeleteRequest;
 import org.eclipse.che.api.git.shared.TagListRequest;
 
+import javax.ws.rs.QueryParam;
 import java.io.Closeable;
 import java.io.File;
 import java.net.URISyntaxException;
@@ -119,13 +120,14 @@ public interface GitConnection extends Closeable {
     /**
      * Delete branch.
      *
-     * @param request
-     *         delete branch request
+     * @param name
+     *         name of the branch to delete
+     * @param force
+     *          <code>true</code> if need to delete with force
      * @throws GitException
-     *         if any error occurs when delete branch
-     * @see BranchDeleteRequest
+     *         if any error occurs when deleting branch
      */
-    void branchDelete(BranchDeleteRequest request) throws GitException, UnauthorizedException;
+    void branchDelete(String name, boolean force) throws GitException, UnauthorizedException;
 
     /**
      * Rename branch.
@@ -142,16 +144,16 @@ public interface GitConnection extends Closeable {
     /**
      * List branches.
      *
-     * @param request
-     *         list branches request
-     * @return list of branch
+     * @param litMode
+     *         specifies mode of listing branches
+     * @return list of branches
      * @throws GitException
      *         if any error occurs
      * @throws IllegalArgumentException
-     *         if {@link BranchListRequest#getListMode()} returns not <code>null</code> or 'a' or 'r'
+     *         if {@param listMode} is <code>null</code> or not 'a' or 'r'
      * @see BranchListRequest
      */
-    List<Branch> branchList(BranchListRequest request) throws GitException;
+    List<Branch> branchList(String litMode) throws GitException;
 
     /**
      * Show information about files in the index and the working tree

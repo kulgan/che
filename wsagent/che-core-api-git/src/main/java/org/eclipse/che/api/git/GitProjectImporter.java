@@ -173,7 +173,7 @@ public class GitProjectImporter implements ProjectImporter {
                     } else {
                         fetchBranch(git, "origin", branch == null ? "*" : branch, dtoFactory);
 
-                        List<Branch> branchList = git.branchList(dtoFactory.createDto(BranchListRequest.class).withListMode("r"));
+                        List<Branch> branchList = git.branchList("r");
                         if (!branchList.isEmpty()) {
                             checkoutBranch(git, projectName, branch == null ? "master" : branch, startPoint, dtoFactory);
                         }
