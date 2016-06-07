@@ -1027,7 +1027,7 @@ public class DockerConnectorTest {
         verify(dockerResponse).getInputStream();
     }
 
-    @Test
+    @Test (enabled = false)
     public void shouldBeAbleToPushImageToRegistryRepository() throws IOException, InterruptedException {
         PushParams pushParams = PushParams.create(REPOSITORY)
                                           .withRegistry(REGISTRY);

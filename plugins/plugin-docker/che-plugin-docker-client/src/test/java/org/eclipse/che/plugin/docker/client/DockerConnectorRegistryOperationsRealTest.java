@@ -64,7 +64,7 @@ public class DockerConnectorRegistryOperationsRealTest {
     @BeforeMethod
     public void setup() {
         configurationPropertiesMap = new HashMap<>();
-        configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_URL_KEY, DOCKER_REGISTRY_URL_VALUE);
+        configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_URL_KEY, DOCKER_REGISTRY_AUTH_URL_VALUE); // <-- protocol & v1
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_EMAIL_KEY, DOCKER_REGISTRY_AUTH_EMAIL_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_USERNAME_KEY, DOCKER_REGISTRY_AUTH_USERNAME_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_PASSWORD_KEY, DOCKER_REGISTRY_AUTH_PASSWORD_VALUE);
@@ -79,18 +79,19 @@ public class DockerConnectorRegistryOperationsRealTest {
         dockerConnector = new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory);
     }
 
-    @Test
+    @Test (enabled = false)
     public void pullFromPrivateRegistry() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
 
         dockerConnector.pull(PullParams.create(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
-                                       .withRegistry(DOCKER_REGISTRY_AUTH_URL_VALUE),
+                                       .withRegistry(DOCKER_REGISTRY_AUTH_URL_VALUE)
+                                       .withTag(TAG_NAME),
                              currentProgressStatus -> {
                                  System.out.println(progressLineFormatter.format(currentProgressStatus));
                              });
     }
 
-    @Test
+    @Test (enabled = false)
     public void pushToPrivateRegistry() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
 
@@ -102,7 +103,7 @@ public class DockerConnectorRegistryOperationsRealTest {
                              });
     }
 
-    @Test
+    @Test (enabled = false)
     public void buildImageFromPrivateRepository() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
         final ClassLoader classLoader = getClass().getClassLoader();

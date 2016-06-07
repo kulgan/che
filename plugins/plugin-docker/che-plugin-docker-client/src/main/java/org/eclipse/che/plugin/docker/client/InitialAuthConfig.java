@@ -43,14 +43,17 @@ public class InitialAuthConfig {
 
     AuthConfig predefinedConfig;
 
+    private String serverAddress = "https://index.docker.io/v1/";
+    private String username = null;
+    private String password = null;
+    private String email = null;
+
     /** For testing purposes */
     public InitialAuthConfig() {
     }
 
     @Inject
     public InitialAuthConfig(ConfigurationProperties configurationProperties) {
-        String serverAddress = "https://index.docker.io/v1/";
-        String username = null, password = null, email = null;
         for (Map.Entry<String, String> e : configurationProperties.getProperties(CONFIGURATION_PREFIX_PATTERN).entrySet()) {
             final String classifier = e.getKey().replaceFirst(CONFIGURATION_PREFIX, "");
             switch (classifier) {
@@ -95,4 +98,13 @@ public class InitialAuthConfig {
         }
         return authConfigs;
     }
+
+    public String getDefaultUsername() {
+        return username;
+    }
+
+    public String getDefaultPassword() {
+        return password;
+    }
+
 }

@@ -1139,12 +1139,6 @@ public class DockerConnector {
                                                             .query("forcerm", 1)
                                                             .header("Content-Type", "application/x-compressed-tar")
                                                             .header("Content-Length", tar.length())
-                                                            /*.header("X-Registry-Config",  Base64.encodeBase64String((" {\n" +
-                                                                                                                    "        \"https://index.docker.io/v1/\": {\n" +
-                                                                                                                    "            \"username\": \"mm4eche\",\n" +
-                                                                                                                    "            \"password\": \"4dtests\"\n" +
-                                                                                                                    "        }\n" +
-                                                                                                                    "    }").getBytes()))*/
                                                             .header("X-Registry-Config",
                                                                     getXRegistryConfigHeaderValue(
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))
@@ -1322,7 +1316,7 @@ public class DockerConnector {
 
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
-                                                            .path("/images/" + fullRepo + "/push")
+                                                            .path("/images/" + /*fullRepo*/params.getRepository() + "/push")
                                                             .header("X-Registry-Auth",
                                                                     getXRegistryAuthHeaderValue(
                                                                             registry,
@@ -1428,8 +1422,8 @@ public class DockerConnector {
         // TODO: add option to pause container
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
-                                                            .path("/commit")
-                                                            .query("container", params.getContainer())) {
+                                                            .path("/commit")) {
+            addQueryParamIfNotNull(connection, "container", params.getContainer());
             addQueryParamIfNotNull(connection, "repo", params.getRepository());
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             addQueryParamIfNotNull(connection, "comment", (params.getComment() == null) ?
@@ -1509,7 +1503,7 @@ public class DockerConnector {
                                                             .query("fromImage", registry != null ? registry + '/' + image : image)
                                                             .header("X-Registry-Auth",
                                                                     getXRegistryAuthHeaderValue(
-                                                                            registry,
+                                                                            registry != null ? registry : "",
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
@@ -1758,6 +1752,11 @@ public class DockerConnector {
      * @return base64 encoded X-Registry-Auth header value
      */
     private String getXRegistryAuthHeaderValue(String registry, @Nullable Map<String,AuthConfig> paramsAuthConfig) {
+        if ("".equals(registry)) {
+            XRegistryAuthUnit auth = new XRegistryAuthUnit(initialAuthConfig.getDefaultUsername(), initialAuthConfig.getDefaultPassword());
+            return Base64.encodeBase64String(JsonHelper.toJson(auth).getBytes());
+        }
+
         AuthConfig authConfig = null;
         if (paramsAuthConfig != null) {
             authConfig = paramsAuthConfig.get(registry);
