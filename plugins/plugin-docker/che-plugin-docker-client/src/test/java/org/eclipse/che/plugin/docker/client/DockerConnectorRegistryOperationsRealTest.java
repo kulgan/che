@@ -46,8 +46,8 @@ public class DockerConnectorRegistryOperationsRealTest {
     private static final String DOCKER_REGISTRY_AUTH_USERNAME_VALUE = "mm4eche";
     private static final String DOCKER_REGISTRY_AUTH_PASSWORD_VALUE = "4dtests";
 
-    private static final String REPOSITORY_NAME = "testprivate";
-    private static final String TAG_NAME = "mtag";
+    private static final String IMAGE_NAME          = "testprivate";
+    private static final String TAG_NAME            = "mtag";
     private static final String ADDITIONAL_TAG_NAME = "newtest";
 
     @Mock
@@ -80,11 +80,12 @@ public class DockerConnectorRegistryOperationsRealTest {
         dockerConnector = new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory, authManager);
     }
 
-    @Test
+    @Test (enabled = false)
     public void pullFromPrivateRegistry() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
 
-        dockerConnector.pull(PullParams.create(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
+        dockerConnector.pull(PullParams.create(IMAGE_NAME)
+                                       .withNamespace(DOCKER_REGISTRY_AUTH_USERNAME_VALUE)
                                        .withRegistry(DOCKER_REGISTRY)
                                        .withTag(TAG_NAME),
                              currentProgressStatus -> {
@@ -92,11 +93,11 @@ public class DockerConnectorRegistryOperationsRealTest {
                              });
     }
 
-    @Test
+    @Test (enabled = false)
     public void pushToPrivateRegistry() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
 
-        dockerConnector.push(PushParams.create(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
+        dockerConnector.push(PushParams.create(IMAGE_NAME, DOCKER_REGISTRY_AUTH_USERNAME_VALUE)
                                        .withRegistry(DOCKER_REGISTRY)
                                        .withTag(ADDITIONAL_TAG_NAME),
                              currentProgressStatus -> {
@@ -104,13 +105,13 @@ public class DockerConnectorRegistryOperationsRealTest {
                              });
     }
 
-    @Test
+    @Test (enabled = false)
     public void buildImageFromPrivateRepository() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
         final ClassLoader classLoader = getClass().getClassLoader();
 
         dockerConnector.buildImage(BuildImageParams.create(new File(classLoader.getResource("Dockerfile").getFile()))
-                                                   .withRepository(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
+                                                   .withRepository(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + IMAGE_NAME)
                                                    .withTag(TAG_NAME),
                                    currentProgressStatus -> {
                                        System.out.println(progressLineFormatter.format(currentProgressStatus));

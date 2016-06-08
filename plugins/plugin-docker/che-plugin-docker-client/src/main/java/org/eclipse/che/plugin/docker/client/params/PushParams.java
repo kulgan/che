@@ -44,6 +44,23 @@ public class PushParams {
         return new PushParams().withRepository(repository);
     }
 
+    /**
+     * Creates arguments holder with required parameters.
+     *
+     * @param image
+     *         image name
+     * @param namespace
+     *         namespace of image (username in case of registry)
+     * @return arguments holder with required parameters
+     * @throws NullPointerException
+     *         if {@code registry} is null
+     */
+    public static PushParams create(@NotNull String image, @NotNull String namespace) {
+        requireNonNull(image);
+        requireNonNull(namespace);
+        return new PushParams().withRepository(namespace + '/' + image);
+    }
+
     private PushParams() {}
 
     /**
@@ -111,6 +128,18 @@ public class PushParams {
 
     public AuthConfigs getAuthConfigs() {
         return authConfigs;
+    }
+
+    /**
+     * Returns FQN of image for push.
+     * It has following format: [registry/][namespace/]image
+     */
+    public String getImageFqn() {
+        if (registry != null) {
+            return registry + '/' + repository;
+        } else {
+            return repository;
+        }
     }
 
     @Override

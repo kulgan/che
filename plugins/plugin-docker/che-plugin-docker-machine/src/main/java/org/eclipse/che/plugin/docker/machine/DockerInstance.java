@@ -87,6 +87,7 @@ public class DockerInstance extends AbstractInstance {
     private final String                                      image;
     private final LineConsumer                                outputConsumer;
     private final String                                      registry;
+    private final String                                      username;
     private final DockerNode                                  node;
     private final DockerInstanceStopDetector                  dockerInstanceStopDetector;
     private final DockerInstanceProcessesCleaner              processesCleaner;
@@ -98,6 +99,7 @@ public class DockerInstance extends AbstractInstance {
     @Inject
     public DockerInstance(DockerConnector docker,
                           @Named("machine.docker.registry") String registry,
+                          @Named("docker.registry.auth.username") String username,
                           DockerMachineFactory dockerMachineFactory,
                           @Assisted Machine machine,
                           @Assisted("container") String container,
@@ -114,6 +116,7 @@ public class DockerInstance extends AbstractInstance {
         this.image = image;
         this.outputConsumer = outputConsumer;
         this.registry = registry;
+        this.username = username;
         this.node = node;
         this.dockerInstanceStopDetector = dockerInstanceStopDetector;
         this.processesCleaner = processesCleaner;
@@ -198,27 +201,30 @@ public class DockerInstance extends AbstractInstance {
     @Override
     public MachineSource saveToSnapshot(String owner) throws MachineException {
         try {
-            final String repository = generateRepository();
+            final String image = generateImageName();
             if(!snapshotUseRegistry) {
-                commitContainer(owner, repository, LATEST_TAG);
-                return new DockerMachineSource(repository).withTag(LATEST_TAG);
+                commitContainer(owner, image, LATEST_TAG);
+                return new DockerMachineSource(image).withTag(LATEST_TAG);
             }
-            final String repositoryName = registry.endsWith("/") ? registry + repository : registry + '/' + repository;
-            commitContainer(owner, repositoryName, LATEST_TAG);
+
+            PushParams pushParams = PushParams.create(image, username)
+                                              .withRegistry(registry)
+                                              .withTag(LATEST_TAG);
+
+            final String imageFqn = pushParams.getImageFqn();
+            commitContainer(owner, imageFqn, LATEST_TAG);
             //TODO fix this workaround. Docker image is not visible after commit when using swarm
             Thread.sleep(2000);
             final ProgressLineFormatterImpl lineFormatter = new ProgressLineFormatterImpl();
-            final String digest = docker.push(PushParams.create(repository)
-                                                        .withTag(LATEST_TAG)
-                                                        .withRegistry(registry),
+            final String digest = docker.push(pushParams,
                                               progressMonitor -> {
                                                   try {
                                                       outputConsumer.writeLine(lineFormatter.format(progressMonitor));
                                                   } catch (IOException ignored) {
                                                   }
                                               });
-            docker.removeImage(RemoveImageParams.create(repositoryName).withForce(false));
-            return new DockerMachineSource(repository).withRegistry(registry).withDigest(digest).withTag(LATEST_TAG);
+            docker.removeImage(RemoveImageParams.create(imageFqn).withForce(false));
+            return new DockerMachineSource(image).withRegistry(registry).withDigest(digest).withTag(LATEST_TAG);
         } catch (IOException ioEx) {
             throw new MachineException(ioEx);
         } catch (InterruptedException e) {
@@ -240,7 +246,7 @@ public class DockerInstance extends AbstractInstance {
                                   .withComment(comment));
     }
 
-    private String generateRepository() {
+    private String generateImageName() {
         return NameGenerator.generate(null, 16);
     }
 

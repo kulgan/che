@@ -1310,12 +1310,10 @@ public class DockerConnector {
     private String push(final PushParams params, final ProgressMonitor progressMonitor, URI dockerDaemonUri)
             throws IOException, InterruptedException {
         final String registry = params.getRegistry();
-        final String fullRepo = (registry != null) ?
-                                registry.endsWith("/") ? registry + params.getRepository() : registry + '/' + params.getRepository()
-                                                   : params.getRepository();
+        final String fullRepo = params.getImageFqn();
         final AuthConfigs authConfigs = params.getAuthConfigs();
-        final ValueHolder<String> digestHolder = new ValueHolder<>();
 
+        final ValueHolder<String> digestHolder = new ValueHolder<>();
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
                                                             .path("/images/" + fullRepo + "/push")
@@ -1495,14 +1493,13 @@ public class DockerConnector {
     private void pull(final PullParams params,
                       final ProgressMonitor progressMonitor,
                       final URI dockerDaemonUri) throws IOException, InterruptedException {
-        final String image = params.getImage();
         final String registry = params.getRegistry();
         final AuthConfigs authConfigs = params.getAuthConfigs();
 
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
                                                             .path("/images/create")
-                                                            .query("fromImage", registry != null ? registry + '/' + image : image)
+                                                            .query("fromImage", params.getImageFqn())
                                                             .header("X-Registry-Auth",
                                                                     authManager.getXRegistryAuthHeaderValue(
                                                                             registry != null ? registry : DEFAULT_REGISTRY,

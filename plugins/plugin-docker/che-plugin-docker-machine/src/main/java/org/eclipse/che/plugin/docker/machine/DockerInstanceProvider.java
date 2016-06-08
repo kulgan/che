@@ -38,8 +38,10 @@ import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.plugin.docker.client.DockerConnector;
 import org.eclipse.che.plugin.docker.client.DockerConnectorConfiguration;
 import org.eclipse.che.plugin.docker.client.DockerFileException;
+import org.eclipse.che.plugin.docker.client.DockerRegistryAuthManager;
 import org.eclipse.che.plugin.docker.client.Dockerfile;
 import org.eclipse.che.plugin.docker.client.DockerfileParser;
+import org.eclipse.che.plugin.docker.client.InitialAuthConfig;
 import org.eclipse.che.plugin.docker.client.ProgressLineFormatterImpl;
 import org.eclipse.che.plugin.docker.client.ProgressMonitor;
 import org.eclipse.che.plugin.docker.client.json.ContainerConfig;
@@ -111,6 +113,7 @@ public class DockerInstanceProvider implements InstanceProvider {
     private final String                           projectFolderPath;
     private final boolean                          snapshotUseRegistry;
     private final RecipeRetriever                  recipeRetriever;
+    private final DockerRegistryAuthManager        authManager;
 
     @Inject
     public DockerInstanceProvider(DockerConnector docker,
@@ -119,6 +122,7 @@ public class DockerInstanceProvider implements InstanceProvider {
                                   DockerInstanceStopDetector dockerInstanceStopDetector,
                                   DockerContainerNameGenerator containerNameGenerator,
                                   RecipeRetriever recipeRetriever,
+                                  DockerRegistryAuthManager authManager,
                                   @Named("machine.docker.dev_machine.machine_servers") Set<ServerConf> devMachineServers,
                                   @Named("machine.docker.machine_servers") Set<ServerConf> allMachinesServers,
                                   @Named("machine.docker.dev_machine.machine_volumes") Set<String> devMachineSystemVolumes,
@@ -136,6 +140,7 @@ public class DockerInstanceProvider implements InstanceProvider {
         this.dockerInstanceStopDetector = dockerInstanceStopDetector;
         this.containerNameGenerator = containerNameGenerator;
         this.recipeRetriever = recipeRetriever;
+        this.authManager = authManager;
         this.workspaceFolderPathProvider = workspaceFolderPathProvider;
         this.doForcePullOnBuild = doForcePullOnBuild;
         this.privilegeMode = privilegeMode;
@@ -406,8 +411,9 @@ public class DockerInstanceProvider implements InstanceProvider {
             tag = dockerMachineSource.getTag();
         }
         PullParams pullParams = PullParams.create(dockerMachineSource.getRepository())
-                  .withTag(tag)
-                  .withRegistry(dockerMachineSource.getRegistry());
+                                          .withTag(tag)
+                                          .withRegistry(dockerMachineSource.getRegistry())
+                                          .withNamespace(authManager.getDefaultUsername());
         try {
             final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
             docker.pull(pullParams,

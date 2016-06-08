@@ -29,6 +29,7 @@ public class PullParams {
     private String      image;
     private String      tag;
     private String      registry;
+    private String      namespace;
     private AuthConfigs authConfigs;
 
     /**
@@ -87,6 +88,19 @@ public class PullParams {
     }
 
     /**
+     * Adds namespace to this parameters.
+     * In case of registry it is the same with username.
+     *
+     * @param namespace
+     *         namespace to which images belongs to
+     * @return this params instance
+     */
+    public PullParams withNamespace(String namespace) {
+        this.namespace = namespace;
+        return this;
+    }
+
+    /**
      * Adds auth configuration to this parameters.
      *
      * @param authConfigs
@@ -110,8 +124,32 @@ public class PullParams {
         return registry;
     }
 
+    public String getNamespace() {
+        return namespace;
+    }
+
     public AuthConfigs getAuthConfigs() {
         return authConfigs;
+    }
+
+    /**
+     * Returns FQN of image for pull.
+     * It has following format: [registry/][namespace/]image
+     */
+    public String getImageFqn() {
+        if (registry != null) {
+            if (namespace != null) {
+                return registry + '/' + namespace + '/' + image;
+            } else {
+                return registry + '/' + image; // for case if image contains its namespace
+            }
+        } else {
+            if (namespace != null) {
+                return namespace + '/' + image;
+            } else {
+                return image;
+            }
+        }
     }
 
     @Override
@@ -122,12 +160,13 @@ public class PullParams {
         return Objects.equals(image, that.image) &&
                Objects.equals(tag, that.tag) &&
                Objects.equals(registry, that.registry) &&
+               Objects.equals(namespace, that.namespace) &&
                Objects.equals(authConfigs, that.authConfigs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(image, tag, registry, authConfigs);
+        return Objects.hash(image, tag, registry, namespace, authConfigs);
     }
 
 }
