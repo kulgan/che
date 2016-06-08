@@ -34,7 +34,6 @@ import org.everrest.core.tools.ResourceLauncher;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
@@ -162,15 +161,18 @@ public class UserServiceTest {
 
     @Test
     public void shouldBeAbleToCreateNewUser() throws Exception {
+        final User userByToken = new User().withEmail("test@email.com").withName("test");
         final String userEmail = "test@email.com";
+        final String userName = "test";
         final String token = "test_token";
-        when(tokenValidator.validateToken(token)).thenReturn(userEmail);
+        when(tokenValidator.validateToken(token)).thenReturn(userByToken);
 
         final ContainerResponse response = makeRequest(HttpMethod.POST, SERVICE_PATH + "/create?token=" + token, null);
 
         assertEquals(response.getStatus(), CREATED.getStatusCode());
         final UserDescriptor user = (UserDescriptor)response.getEntity();
         assertEquals(user.getEmail(), userEmail);
+        assertEquals(user.getName(), userName);
         assertEquals(user.getPassword(), "<none>");
         verify(userManager).create(any(User.class), eq(false));
 
@@ -220,9 +222,11 @@ public class UserServiceTest {
         uriField.setAccessible(true);
         uriField.set(userService, false);
 
+        final User userByToken = new User().withEmail("test@email.com").withName("test");
         final String userEmail = "test@email.com";
+        final String userName = "test";
         final String token = "test_token";
-        when(tokenValidator.validateToken(token)).thenReturn(userEmail);
+        when(tokenValidator.validateToken(token)).thenReturn(userByToken);
 
         final ContainerResponse response = makeRequest(HttpMethod.POST, SERVICE_PATH + "/create?token=" + token, null);
 

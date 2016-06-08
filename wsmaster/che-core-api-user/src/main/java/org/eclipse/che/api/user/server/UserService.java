@@ -456,7 +456,7 @@ public class UserService extends Service {
         if (token == null) {
             throw new UnauthorizedException("Missed token parameter");
         }
-        return new User().withEmail(tokenValidator.validateToken(token));
+        return tokenValidator.validateToken(token);
     }
 
     /**

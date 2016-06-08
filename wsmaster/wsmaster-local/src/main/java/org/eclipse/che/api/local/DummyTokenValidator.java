@@ -12,6 +12,7 @@ package org.eclipse.che.api.local;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.user.server.TokenValidator;
+import org.eclipse.che.api.user.server.dao.User;
 
 import javax.inject.Singleton;
 
@@ -23,9 +24,9 @@ import javax.inject.Singleton;
  */
 @Singleton
 public class DummyTokenValidator implements TokenValidator {
-    /** {@inheritDoc} */
+
     @Override
-    public String validateToken(String token) throws ConflictException {
-        return "che@eclipse.org";
+    public User validateToken(String token) throws ConflictException {
+        return new User().withName("test").withEmail("che@eclipse.org");
     }
 }
