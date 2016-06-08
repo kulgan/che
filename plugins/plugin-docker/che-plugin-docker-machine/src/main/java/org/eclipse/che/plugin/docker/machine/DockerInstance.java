@@ -204,7 +204,7 @@ public class DockerInstance extends AbstractInstance {
                 return new DockerMachineSource(repository).withTag(LATEST_TAG);
             }
             final String repositoryName = registry.endsWith("/") ? registry + repository : registry + '/' + repository;
-            commitContainer(owner, repository, LATEST_TAG);
+            commitContainer(owner, repositoryName, LATEST_TAG);
             //TODO fix this workaround. Docker image is not visible after commit when using swarm
             Thread.sleep(2000);
             final ProgressLineFormatterImpl lineFormatter = new ProgressLineFormatterImpl();

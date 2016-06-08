@@ -157,6 +157,8 @@ public class DockerConnectorTest {
     private MessageProcessor<Event>      eventMessageProcessor;
     @Mock
     private File                         dockerfile;
+    @Mock
+    private DockerRegistryAuthManager    authManager;
 
     @Captor
     private ArgumentCaptor<Object> captor;
@@ -172,7 +174,7 @@ public class DockerConnectorTest {
         when(initialAuthConfig.getAuthConfigs()).thenReturn(authConfigs);
         when(authConfigs.getConfigs()).thenReturn(new HashMap<>());
 
-        dockerConnector = spy(new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory));
+        dockerConnector = spy(new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory, authManager));
 
         doReturn(new DockerException(EXCEPTION_ERROR_MESSAGE, RESPONSE_ERROR_CODE))
                 .when(dockerConnector).getDockerException(any(DockerResponse.class));
@@ -1027,7 +1029,7 @@ public class DockerConnectorTest {
         verify(dockerResponse).getInputStream();
     }
 
-    @Test (enabled = false)
+    @Test
     public void shouldBeAbleToPushImageToRegistryRepository() throws IOException, InterruptedException {
         PushParams pushParams = PushParams.create(REPOSITORY)
                                           .withRegistry(REGISTRY);

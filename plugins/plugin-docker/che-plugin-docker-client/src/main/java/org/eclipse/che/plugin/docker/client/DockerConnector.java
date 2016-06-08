@@ -119,17 +119,18 @@ public class DockerConnector {
     private static final Logger LOG = LoggerFactory.getLogger(DockerConnector.class);
     private static final String DEFAULT_REGISTRY = "";
 
-    private final URI                     dockerDaemonUri;
-    private final InitialAuthConfig       initialAuthConfig;
-    private final ExecutorService         executor;
-    private final DockerConnectionFactory connectionFactory;
+    private final URI                       dockerDaemonUri;
+    private final DockerRegistryAuthManager authManager;
+    private final ExecutorService           executor;
+    private final DockerConnectionFactory   connectionFactory;
 
     @Inject
     public DockerConnector(DockerConnectorConfiguration connectorConfiguration,
-                           DockerConnectionFactory connectionFactory) {
+                           DockerConnectionFactory connectionFactory,
+                           DockerRegistryAuthManager authManager) {
         this.dockerDaemonUri = connectorConfiguration.getDockerDaemonUri();
-        this.initialAuthConfig = connectorConfiguration.getAuthConfigs();
         this.connectionFactory = connectionFactory;
+        this.authManager = authManager;
         executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder()
                                                          .setNameFormat("DockerApiConnector-%d")
                                                          .setDaemon(true)
@@ -1140,7 +1141,7 @@ public class DockerConnector {
                                                             .header("Content-Type", "application/x-compressed-tar")
                                                             .header("Content-Length", tar.length())
                                                             .header("X-Registry-Config",
-                                                                    getXRegistryConfigHeaderValue(
+                                                                    authManager.getXRegistryConfigHeaderValue(
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))
                                                             .entity(tarInput)) {
             if (tag == null) {
@@ -1310,16 +1311,17 @@ public class DockerConnector {
             throws IOException, InterruptedException {
         final String registry = params.getRegistry();
         final String fullRepo = (registry != null) ?
-                                registry + '/' + params.getRepository() : params.getRepository();
+                                registry.endsWith("/") ? registry + params.getRepository() : registry + '/' + params.getRepository()
+                                                   : params.getRepository();
         final AuthConfigs authConfigs = params.getAuthConfigs();
         final ValueHolder<String> digestHolder = new ValueHolder<>();
 
         try (DockerConnection connection = connectionFactory.openConnection(dockerDaemonUri)
                                                             .method("POST")
-                                                            .path("/images/" + /*fullRepo*/params.getRepository() + "/push")
+                                                            .path("/images/" + fullRepo + "/push")
                                                             .header("X-Registry-Auth",
-                                                                    getXRegistryAuthHeaderValue(
-                                                                            registry,
+                                                                    authManager.getXRegistryAuthHeaderValue(
+                                                                            registry != null ? registry : DEFAULT_REGISTRY,
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
@@ -1502,8 +1504,8 @@ public class DockerConnector {
                                                             .path("/images/create")
                                                             .query("fromImage", registry != null ? registry + '/' + image : image)
                                                             .header("X-Registry-Auth",
-                                                                    getXRegistryAuthHeaderValue(
-                                                                            registry != null ? registry : "",
+                                                                    authManager.getXRegistryAuthHeaderValue(
+                                                                            registry != null ? registry : DEFAULT_REGISTRY,
                                                                             authConfigs != null ? authConfigs.getConfigs() : null))) {
             addQueryParamIfNotNull(connection, "tag", params.getTag());
             final DockerResponse response = connection.request();
@@ -1737,87 +1739,6 @@ public class DockerConnector {
     private void addQueryParamIfNotNull(DockerConnection connection, String queryParamName, Boolean paramValue) {
         if (paramValue != null) {
             connection.query(queryParamName, paramValue ? 1 : 0);
-        }
-    }
-
-    /**
-     * Looks for auth header for specified registry.
-     * First searches in the params and then in the initial auth config.
-     * If nothing found empty json will be returned.
-     *
-     * @param registry
-     *         registry to which API call will be applied
-     * @param paramsAuthConfig
-     *         auth data for current API call
-     * @return base64 encoded X-Registry-Auth header value
-     */
-    private String getXRegistryAuthHeaderValue(String registry, @Nullable Map<String,AuthConfig> paramsAuthConfig) {
-        if ("".equals(registry)) {
-            XRegistryAuthUnit auth = new XRegistryAuthUnit(initialAuthConfig.getDefaultUsername(), initialAuthConfig.getDefaultPassword());
-            return Base64.encodeBase64String(JsonHelper.toJson(auth).getBytes());
-        }
-
-        AuthConfig authConfig = null;
-        if (paramsAuthConfig != null) {
-            authConfig = paramsAuthConfig.get(registry);
-        }
-        if (authConfig == null) {
-            authConfig = initialAuthConfig.getAuthConfigs().getConfigs().get(registry);
-        }
-
-        if (authConfig != null) {
-            XRegistryAuthUnit auth = new XRegistryAuthUnit(authConfig.getUsername(), authConfig.getPassword());
-            return Base64.encodeBase64String(JsonHelper.toJson(auth).getBytes());
-        }
-
-        return Base64.encodeBase64String("{}".getBytes());
-    }
-
-    /**
-     * Builds list of auth configs.
-     * Adds auth configs from current API call and from initial auth config.
-     *
-     * @param paramsAuthConfig
-     *         auth config for current API call
-     * @return base64 encoded X-Registry-Config header value
-     */
-    private String getXRegistryConfigHeaderValue(@Nullable Map<String,AuthConfig> paramsAuthConfig) {
-        Map<String, XRegistryAuthUnit> authConfigs = new HashMap<>();
-
-        for(Map.Entry<String, AuthConfig> entry : initialAuthConfig.getAuthConfigs().getConfigs().entrySet()) {
-            AuthConfig value = entry.getValue();
-            authConfigs.put(value.getServeraddress(),
-                            new XRegistryAuthUnit(value.getUsername(), value.getPassword()));
-        }
-
-        if (paramsAuthConfig != null) {
-            for(Map.Entry<String, AuthConfig> entry : paramsAuthConfig.entrySet()) {
-                AuthConfig value = entry.getValue();
-                authConfigs.put(entry.getKey(),
-                                new XRegistryAuthUnit(value.getUsername(), value.getPassword()));
-            }
-        }
-
-        return Base64.encodeBase64String(JsonHelper.toJson(authConfigs).getBytes());
-    }
-
-    /** This class is used for generate X-Registry-Config list */
-    // protected is needed for JsonHelper
-    protected static class XRegistryAuthUnit {
-        private String username;
-        private String password;
-
-        public XRegistryAuthUnit(String username, String password) {
-            this.username = username;
-            this.password = password;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public String getPassword() {
-            return password;
         }
     }
 

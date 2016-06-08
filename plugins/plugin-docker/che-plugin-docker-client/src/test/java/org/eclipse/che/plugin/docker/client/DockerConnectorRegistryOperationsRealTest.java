@@ -41,7 +41,7 @@ public class DockerConnectorRegistryOperationsRealTest {
     private static final String DOCKER_REGISTRY_AUTH_PASSWORD_KEY = "password";
 
     private static final String DOCKER_REGISTRY_URL_VALUE           = "https://index.docker.io/v1/";
-    private static final String DOCKER_REGISTRY_AUTH_URL_VALUE      = "index.docker.io";
+    private static final String DOCKER_REGISTRY                     = "index.docker.io";
     private static final String DOCKER_REGISTRY_AUTH_EMAIL_VALUE    = "mmorhun@codenvy.com";
     private static final String DOCKER_REGISTRY_AUTH_USERNAME_VALUE = "mm4eche";
     private static final String DOCKER_REGISTRY_AUTH_PASSWORD_VALUE = "4dtests";
@@ -64,7 +64,7 @@ public class DockerConnectorRegistryOperationsRealTest {
     @BeforeMethod
     public void setup() {
         configurationPropertiesMap = new HashMap<>();
-        configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_URL_KEY, DOCKER_REGISTRY_AUTH_URL_VALUE); // <-- protocol & v1
+        configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_URL_KEY, DOCKER_REGISTRY_URL_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_EMAIL_KEY, DOCKER_REGISTRY_AUTH_EMAIL_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_USERNAME_KEY, DOCKER_REGISTRY_AUTH_USERNAME_VALUE);
         configurationPropertiesMap.put(DOCKER_REGISTRY_AUTH_PASSWORD_KEY, DOCKER_REGISTRY_AUTH_PASSWORD_VALUE);
@@ -75,35 +75,36 @@ public class DockerConnectorRegistryOperationsRealTest {
         networkFinder = new DefaultNetworkFinder();
         dockerConnectorConfiguration = new DockerConnectorConfiguration(initialAuthConfig, networkFinder);
         dockerConnectionFactory = new DockerConnectionFactory(dockerConnectorConfiguration);
+        DockerRegistryAuthManager authManager = new DockerRegistryAuthManager(initialAuthConfig);
 
-        dockerConnector = new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory);
+        dockerConnector = new DockerConnector(dockerConnectorConfiguration, dockerConnectionFactory, authManager);
     }
 
-    @Test (enabled = false)
+    @Test
     public void pullFromPrivateRegistry() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
 
         dockerConnector.pull(PullParams.create(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
-                                       .withRegistry(DOCKER_REGISTRY_AUTH_URL_VALUE)
+                                       .withRegistry(DOCKER_REGISTRY)
                                        .withTag(TAG_NAME),
                              currentProgressStatus -> {
                                  System.out.println(progressLineFormatter.format(currentProgressStatus));
                              });
     }
 
-    @Test (enabled = false)
+    @Test
     public void pushToPrivateRegistry() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
 
         dockerConnector.push(PushParams.create(DOCKER_REGISTRY_AUTH_USERNAME_VALUE + '/' + REPOSITORY_NAME)
-                                       .withRegistry(DOCKER_REGISTRY_AUTH_URL_VALUE)
+                                       .withRegistry(DOCKER_REGISTRY)
                                        .withTag(ADDITIONAL_TAG_NAME),
                              currentProgressStatus -> {
                                  System.out.println(progressLineFormatter.format(currentProgressStatus));
                              });
     }
 
-    @Test (enabled = false)
+    @Test
     public void buildImageFromPrivateRepository() throws IOException, InterruptedException {
         final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
         final ClassLoader classLoader = getClass().getClassLoader();
