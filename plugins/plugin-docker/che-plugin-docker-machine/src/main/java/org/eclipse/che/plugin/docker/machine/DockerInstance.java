@@ -265,6 +265,11 @@ public class DockerInstance extends AbstractInstance {
             docker.removeImage(image, false);
         } catch (IOException ignore) {
         }
+
+        try {
+            outputConsumer.close();
+        } catch (IOException ignored) {
+        }
     }
 
     @Override

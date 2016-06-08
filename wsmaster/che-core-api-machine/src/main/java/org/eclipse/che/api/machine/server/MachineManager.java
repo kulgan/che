@@ -332,6 +332,10 @@ public class MachineManager {
 
             return machine;
         } catch (ConflictException e) {
+            try {
+                machineLogger.close();
+            } catch (IOException ignored) {
+            }
             throw new MachineException(e.getLocalizedMessage(), e);
         }
     }
@@ -645,6 +649,11 @@ public class MachineManager {
 
                 try {
                     processLogger.writeLine(String.format("[ERROR] %s", error.getMessage()));
+                } catch (IOException ignored) {
+                }
+            } finally {
+                try {
+                    processLogger.close();
                 } catch (IOException ignored) {
                 }
             }
