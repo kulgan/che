@@ -91,12 +91,13 @@ public class MachineManager {
     private final SnapshotDao              snapshotDao;
     private final File                     machineLogsDir;
     private final MachineInstanceProviders machineInstanceProviders;
-    private final ExecutorService          executor;
     private final MachineRegistry          machineRegistry;
     private final EventService             eventService;
     private final int                      defaultMachineMemorySizeMB;
     private final MachineCleaner           machineCleaner;
     private final WsAgentLauncher          wsAgentLauncher;
+
+    final         ExecutorService          executor;
 
     @Inject
     public MachineManager(SnapshotDao snapshotDao,

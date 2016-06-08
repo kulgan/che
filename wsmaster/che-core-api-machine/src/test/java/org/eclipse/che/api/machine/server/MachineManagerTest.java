@@ -11,6 +11,7 @@
 package org.eclipse.che.api.machine.server;
 
 import org.eclipse.che.api.core.BadRequestException;
+import org.eclipse.che.api.core.model.machine.Command;
 import org.eclipse.che.api.core.model.machine.Limits;
 import org.eclipse.che.api.core.model.machine.Machine;
 import org.eclipse.che.api.core.model.machine.MachineConfig;
@@ -26,11 +27,13 @@ import org.eclipse.che.api.machine.server.model.impl.MachineSourceImpl;
 import org.eclipse.che.api.machine.server.model.impl.ServerConfImpl;
 import org.eclipse.che.api.machine.server.recipe.RecipeImpl;
 import org.eclipse.che.api.machine.server.spi.Instance;
+import org.eclipse.che.api.machine.server.spi.InstanceProcess;
 import org.eclipse.che.api.machine.server.spi.InstanceProvider;
 import org.eclipse.che.api.machine.server.wsagent.WsAgentLauncher;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.commons.subject.SubjectImpl;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.AfterMethod;
@@ -39,12 +42,15 @@ import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -72,6 +78,8 @@ public class MachineManagerTest {
     private static final String USER_ID                        = "userId";
     private static final String MACHINE_ID                     = "machineId";
 
+    private String machineLogsDir;
+
     @Mock
     private MachineInstanceProviders machineInstanceProviders;
     @Mock
@@ -91,8 +99,7 @@ public class MachineManagerTest {
     public void setUp() throws Exception {
         final SnapshotDao snapshotDao = mock(SnapshotDao.class);
         final EventService eventService = mock(EventService.class);
-        final String machineLogsDir = targetDir().resolve("logs-dir").toString();
-        IoUtil.deleteRecursive(new File(machineLogsDir));
+        machineLogsDir = targetDir().resolve("logs-dir").toString();
         manager = spy(new MachineManager(snapshotDao,
                                          machineRegistry,
                                          machineInstanceProviders,
@@ -119,6 +126,7 @@ public class MachineManagerTest {
 
     @AfterMethod
     public void tearDown() throws Exception {
+        IoUtil.deleteRecursive(new File(machineLogsDir));
         EnvironmentContext.reset();
     }
 
@@ -197,6 +205,41 @@ public class MachineManagerTest {
         } catch (Exception e) {
             verify(machineRegistry).remove(MACHINE_ID);
         }
+    }
+
+    @Test(expectedExceptions = IOException.class, expectedExceptionsMessageRegExp = "Stream closed")
+    public void shouldCloseProcessLoggerOnExec() throws Exception {
+        Command command = mock(Command.class);
+        when(command.getCommandLine()).thenReturn("CommandLine");
+        when(command.getName()).thenReturn("CommandName");
+        when(command.getType()).thenReturn("CommandType");
+        when(machineRegistry.getInstance(MACHINE_ID)).thenReturn(instance);
+        InstanceProcess instanceProcess = mock(InstanceProcess.class);
+        when(instance.createProcess(command, "outputChannel")).thenReturn(instanceProcess);
+        when(instanceProcess.getPid()).thenReturn(111);
+        ArgumentCaptor<LineConsumer> argumentCaptor = ArgumentCaptor.forClass(LineConsumer.class);
+        //Create log file
+        File logDir = new File(machineLogsDir + "/" + MACHINE_ID);
+        logDir.mkdirs();
+        new File(logDir, "111").createNewFile();
+
+        manager.exec(MACHINE_ID, command, "outputChannel");
+        //Wait until executor will complete the task
+        for (int i = 0; ((ThreadPoolExecutor)manager.executor).getCompletedTaskCount() == 0 && i < 10; i++) {
+            Thread.sleep(300);
+        }
+
+        verify(instanceProcess).start(argumentCaptor.capture());
+        LineConsumer lineConsumer = argumentCaptor.getValue();
+        lineConsumer.writeLine("line");
+        //Should throw exception because lineConsumer is closed
+        ((LineConsumer[])getPrivateField(lineConsumer, "lineConsumers"))[0].writeLine("line");
+    }
+
+    private Object getPrivateField(Object obj, String fieldName) throws Exception {
+        Field field = obj.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return field.get(obj);
     }
 
     private static Path targetDir() throws Exception {

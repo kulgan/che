@@ -147,12 +147,13 @@ public class SshMachineInstance extends AbstractInstance {
 
     @Override
     public void destroy() throws MachineException {
-        // session destroying stops all processes
-        // todo kill all processes started by code, we should get parent pid of session and kill all children
         try {
             outputConsumer.close();
         } catch (IOException ignored) {
         }
+
+        // session destroying stops all processes
+        // todo kill all processes started by code, we should get parent pid of session and kill all children
         sshClient.stop();
     }
 
