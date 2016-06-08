@@ -8,22 +8,28 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node.settings.impl;
+package org.eclipse.che.plugin.docker.machine.proxy;
 
-import org.eclipse.che.ide.api.project.node.settings.NodeSettings;
-import org.eclipse.che.ide.api.project.node.settings.SettingsProvider;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
 
 /**
- * @author Vlad Zhukovskiy
+ * Add env variable to docker environment with no proxy settings.
+ *
+ * @author Roman Iuvshyn
  */
-public class DummySettingsProvider implements SettingsProvider {
-    @Override
-    public NodeSettings getSettings() {
-        return NodeSettings.DEFAULT_SETTINGS;
-    }
+public class NoProxyEnvVariableProvider implements Provider<String> {
+
+    private static final String NO_PROXY = "no_proxy=";
+
+    @Inject
+    @Named("no_proxy")
+    private String noProxy;
 
     @Override
-    public void setSettings(NodeSettings settings) {
-        //stub
+    public String get() {
+        return noProxy.isEmpty() ? "" : NO_PROXY + noProxy;
     }
+
 }

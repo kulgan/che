@@ -8,29 +8,22 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node;
+package org.eclipse.che.ide.api.factory;
 
-import javax.validation.constraints.NotNull;
+import com.google.gwt.event.shared.EventHandler;
 
 /**
- * Indicates that specified node can contains data object, e.g. project descriptor or item reference.
+ * Handler for FactoryAcceptedEvent.
+ * You can use this handler in case need to do some action on after accepting factory
  *
- * @author Vlad Zhukovskiy
+ * @author Vitalii Parfonov
  */
-public interface HasDataObject<D> {
-    /**
-     * Retrieve stored data object.
-     *
-     * @return data object
-     */
-    @NotNull
-    D getData();
+public interface FactoryAcceptedHandler extends EventHandler {
 
     /**
-     * Store data object.
-     *
-     * @param data
-     *         data object
+     * Will be called the factory accepted on IDE side.
+     * Project already imported, actions performed.
+     * @param event
      */
-    void setData(@NotNull D data);
+    void onFactoryAccepted(FactoryAcceptedEvent event);
 }

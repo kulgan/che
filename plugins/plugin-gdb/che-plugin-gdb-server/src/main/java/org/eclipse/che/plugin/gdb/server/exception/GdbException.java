@@ -8,11 +8,19 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node.settings;
+package org.eclipse.che.plugin.gdb.server.exception;
+
+import org.eclipse.che.api.debugger.server.exceptions.DebuggerException;
 
 /**
- * @author Vlad Zhukovskiy
+ * @author Anatoliy Bazko
  */
-public interface HasSettings {
-    NodeSettings getSettings();
+public class GdbException extends DebuggerException {
+    public GdbException(String message) {
+        super(message);
+    }
+
+    public GdbException(String message, Exception cause) {
+        super(message, cause);
+    }
 }

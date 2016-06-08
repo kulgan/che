@@ -8,16 +8,22 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node;
+package org.eclipse.che.plugin.gdb.server.exception;
+
+import static java.lang.Math.min;
 
 /**
- * Indicates that specified node can perform actions when it has been activated e.g. by double click.
- *
- * @author Vlad Zhukovskiy
+ * @author Anatoliy Bazko
  */
-public interface HasAction {
-    /**
-     * Perform action.
-     */
-    void actionPerformed();
+@SuppressWarnings("serial")
+public class GdbParseException extends GdbException {
+
+    public static final int MAX_OUTPUT_LENGTH = 80;
+
+    public GdbParseException(Class clazz, String output) {
+        super("Can't parse '"
+              + output.substring(0, min(output.length(), MAX_OUTPUT_LENGTH))
+              + "' into "
+              + clazz.getSimpleName());
+    }
 }

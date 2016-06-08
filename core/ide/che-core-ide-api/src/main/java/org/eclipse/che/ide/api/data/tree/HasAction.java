@@ -8,29 +8,16 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node;
-
-import java.util.List;
-import java.util.Map;
+package org.eclipse.che.ide.api.data.tree;
 
 /**
- * Store attributes in specified node.
+ * Indicates that specified node can perform actions when it has been activated e.g. by double click.
  *
  * @author Vlad Zhukovskiy
  */
-public interface HasAttributes {
+public interface HasAction {
     /**
-     * Get attributes.
-     *
-     * @return attributes map
+     * Perform action.
      */
-    Map<String, List<String>> getAttributes();
-
-    /**
-     * Store attributes.
-     *
-     * @param attributes
-     *         attributes map
-     */
-    void setAttributes(Map<String, List<String>> attributes);
+    void actionPerformed();
 }

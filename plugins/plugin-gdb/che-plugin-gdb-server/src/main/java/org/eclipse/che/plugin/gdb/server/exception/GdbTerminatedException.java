@@ -8,26 +8,17 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node.settings;
+package org.eclipse.che.plugin.gdb.server.exception;
 
 /**
- * Interface for loading stored node settings.
- *
- * @author Vlad Zhukovskiy
+ * @author Anatoliy Bazko
  */
-public interface SettingsProvider {
-    /**
-     * Load settings from anywhere.
-     *
-     * @return node settings
-     */
-    NodeSettings getSettings();
+public class GdbTerminatedException extends GdbException {
+    public GdbTerminatedException(String message) {
+        super(message);
+    }
 
-    /**
-     * Store node settings.
-     *
-     * @param settings
-     *         node settings
-     */
-    void setSettings(NodeSettings settings);
+    public GdbTerminatedException(String message, Exception cause) {
+        super(message, cause);
+    }
 }

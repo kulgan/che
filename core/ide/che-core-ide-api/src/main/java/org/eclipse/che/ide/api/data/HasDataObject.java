@@ -8,22 +8,26 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.plugin.gdb.server.parser;
-
-import static java.lang.Math.min;
+package org.eclipse.che.ide.api.data;
 
 /**
- * @author Anatoliy Bazko
+ * Indicates that specified node can contains data object, e.g. project descriptor or item reference.
+ *
+ * @author Vlad Zhukovskiy
  */
-@SuppressWarnings("serial")
-public class GdbParseException extends Exception {
+public interface HasDataObject<D> {
+    /**
+     * Retrieve stored data object.
+     *
+     * @return data object
+     */
+    D getData();
 
-    public static final int MAX_OUTPUT_LENGTH = 80;
-
-    public GdbParseException(Class clazz, String output) {
-        super("Can't parse '"
-              + output.substring(0, min(output.length(), MAX_OUTPUT_LENGTH))
-              + "' into "
-              + clazz.getSimpleName());
-    }
+    /**
+     * Store data object.
+     *
+     * @param data
+     *         data object
+     */
+    void setData(D data);
 }
