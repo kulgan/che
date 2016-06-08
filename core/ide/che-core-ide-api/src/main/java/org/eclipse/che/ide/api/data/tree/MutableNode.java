@@ -8,16 +8,19 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node;
+package org.eclipse.che.ide.api.data.tree;
 
 /**
- * Indicates that specified node can perform actions when it has been activated e.g. by double click.
+ * Indicates that specified node can be transformed into leaf node.
  *
  * @author Vlad Zhukovskiy
  */
-public interface HasAction {
+public interface MutableNode {
     /**
-     * Perform action.
+     * Set current node status into leaf.
+     *
+     * @param leaf
+     *         true if node should be transformed into leaf
      */
-    void actionPerformed();
+    void setLeaf(boolean leaf);
 }

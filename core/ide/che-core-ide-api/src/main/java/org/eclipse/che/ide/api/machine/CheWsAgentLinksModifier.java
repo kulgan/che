@@ -8,23 +8,24 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node.settings.impl;
+package org.eclipse.che.ide.api.machine;
 
-import org.eclipse.che.ide.api.project.node.settings.NodeSettings;
-import org.eclipse.che.ide.api.project.node.settings.SettingsProvider;
+import com.google.inject.Singleton;
 
 /**
- * @author Vlad Zhukovskiy
+ * Dummy implementation.
+ *
+ * @author Anton Korneta
  */
-public class UserProfileNodeSettingsProvider implements SettingsProvider {
+@Singleton
+public class CheWsAgentLinksModifier implements WsAgentURLModifier {
+
     @Override
-    public NodeSettings getSettings() {
-        //TODO logic for loading node settings from user profile
-        return null;
+    public void initialize(DevMachine devMachine) {
     }
 
     @Override
-    public void setSettings(NodeSettings settings) {
-        //TODO logic for storing node settings into user profile
+    public String modify(String agentUrl) {
+        return agentUrl;
     }
 }

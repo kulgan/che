@@ -8,19 +8,29 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.project.node;
+package org.eclipse.che.ide.api.data.tree;
+
+import java.util.List;
+import java.util.Map;
 
 /**
- * Indicates that specified node can be transformed into leaf node.
+ * Store attributes in specified node.
  *
  * @author Vlad Zhukovskiy
  */
-public interface MutableNode {
+public interface HasAttributes {
     /**
-     * Set current node status into leaf.
+     * Get attributes.
      *
-     * @param leaf
-     *         true if node should be transformed into leaf
+     * @return attributes map
      */
-    void setLeaf(boolean leaf);
+    Map<String, List<String>> getAttributes();
+
+    /**
+     * Store attributes.
+     *
+     * @param attributes
+     *         attributes map
+     */
+    void setAttributes(Map<String, List<String>> attributes);
 }
