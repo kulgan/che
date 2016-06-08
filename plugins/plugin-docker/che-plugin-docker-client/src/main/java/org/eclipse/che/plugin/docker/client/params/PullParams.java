@@ -141,7 +141,7 @@ public class PullParams {
             if (namespace != null) {
                 return registry + '/' + namespace + '/' + image;
             } else {
-                return registry + '/' + image; // for case if image contains its namespace
+                return registry + '/' + image; // for case if image contains namespace
             }
         } else {
             if (namespace != null) {

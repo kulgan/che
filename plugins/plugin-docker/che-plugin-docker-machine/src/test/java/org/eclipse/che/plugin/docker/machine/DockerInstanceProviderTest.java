@@ -497,6 +497,7 @@ public class DockerInstanceProviderTest {
                                                                 dockerInstanceStopDetector,
                                                                 containerNameGenerator,
                                                                 recipeRetriever,
+                                                                authManager,
                                                                 Collections.emptySet(),
                                                                 Collections.emptySet(),
                                                                 Collections.emptySet(),

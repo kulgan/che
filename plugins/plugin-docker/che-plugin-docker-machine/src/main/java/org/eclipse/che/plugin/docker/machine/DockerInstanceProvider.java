@@ -425,7 +425,7 @@ public class DockerInstanceProvider implements InstanceProvider {
         PullParams pullParams = PullParams.create(dockerMachineSource.getRepository())
                                           .withTag(tag)
                                           .withRegistry(dockerMachineSource.getRegistry())
-                                          .withNamespace(authManager.getDefaultUsername());
+                                          .withNamespace(authManager.getDefaultUsername()); // TODO fix dockerMachineSource.getRepository() to return namespace/image instead of image name only
         try {
             final ProgressLineFormatterImpl progressLineFormatter = new ProgressLineFormatterImpl();
             docker.pull(pullParams,
